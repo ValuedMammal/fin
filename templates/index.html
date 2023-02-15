@@ -1,0 +1,106 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+
+{% block main %}
+    <!-- Toggle theme button -->
+    <form action="/" method="post" id="i0" name="theme">
+        <button class="btn btn-sm btn-outline-secondary" name="mood" type="submit">Mood</button>
+    </form>
+    <br>
+
+    <!-- Quick search -->
+    <div style="text-align: right; font-size: small;">
+    <form action="/quoted" method="get" id="i1">
+        <div><label>Quick Search</label></div>
+        <input hidden name="quick-search" type="text">
+        <input autocomplete="off" class="mx-auto w-auto" name="name" placeholder="symbol" type="search">
+        <button class="btn btn-sm btn-secondary opacity-75" name="quick-search" type="submit">Go</button>
+    </form>
+    </div>
+
+    <!-- Greeting -->
+    <h1 class="left">Hello, {{ user }}</h1>
+    <div>
+    <h3 class="left">Net liq: {{ total | usd }}</h3>
+    <h3 class="left">Funds available to trade: {{ cash | usd }}</h3>
+    </div>
+    <br><br>
+    <div>{{ session["portfolio"].holdings }}</div> <!-- for dev purpose only -->
+
+    <h3 class="left">Holdings</h3>
+
+    <!-- Quote refresh button -->
+    <!-- <div class="right" style="width: 42%">
+    <form action="/" method="post" id="i2">
+        <button class="btn btn-sm btn-info opacity-75" name="quotes" type="submit">Refresh</button>
+    </form>
+    </div> -->
+
+    <!-- Portfolio table & Watch list -->
+    <div>
+    <table class="right" style="width: 60%">
+        <tr>
+            <th class="left">Symbol</th>
+            <th>Qty</th>
+            <th>$ Last price</th>
+            <th>$ Mkt value</th>
+        </tr>
+
+        {% for row in holdings %}
+            {% if row.qty != 0 and row.name != 'cash' %}
+            <tr>
+            <td class="left">{{ row["symbol"] }}</td>
+            <td>{{ row["qty"] }}</td>
+            <td>{{ row["price"] }}</td>
+            <td>{{ row["value"] }}</td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+        <tr>
+            <td></td>
+            <td></td>
+            <td>total</td>
+            <td>{{ sum | usd }}</td>
+        </tr>
+    </table>
+    </div>
+    <br><br>
+
+    <!-- Expanded view -->
+    <div class="container-fluid">
+        {% block advanced %}{% endblock %}
+    </div>
+
+    <div>
+    <h3 class="left">Watching</h3>
+    <table class="left" style="width: 54%">
+        <tr>
+            <th>Symbol</th>
+            <th>Name</th>
+            <th class="right">$ Last Price</th>
+            <th></th>
+        </tr>
+
+        {% for row in holdings %}
+            {% if row.qty == 0 and row.name != 'cash' %}
+            <tr>
+            <td>{{ row["symbol"] }}</td>
+            <td>{{ row["name"] }}</td>
+            <td class="right">{{ row["price"] }}</td>
+            <td class="center">
+                <form action="/unwatch" method="post" id="i3">
+                <input hidden name="symbol" value="{{ row.symbol }}" type="text">
+                <button class="btn btn-sm btn-outline-danger opacity-75" type="submit">unwatch</button>
+                </form>
+            </td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+
+    </table>
+    </div>
+{% endblock main %}

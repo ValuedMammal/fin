@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Trade History
+{% endblock %}
+
+
+{% block main %}
+    <h3 class="left">Trades</h3>
+
+    <div>
+    <table class="right" style="width: 70%">
+        <tr>
+            <th>Type</th>
+            <th>Symbol</th>
+            <th>Qty</th>
+            <th>$ Price</th>
+            <th>Time UTC</th>
+        </tr>
+
+        {% for row in trades %}
+            <tr>
+            {% for value in row %}
+                <td>{{ row[value] }}</td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+
+    </table>
+    </div>
+{% endblock %}

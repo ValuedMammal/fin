@@ -1,0 +1,44 @@
+{% extends "index.html" %}
+
+
+<!-- Expanded home page view that allows instant buy/sell orders -->
+{% block advanced %}
+
+<div class="right" style="width: 75%">
+<button class="btn btn-sm btn-secondary opacity-75" id="aaa" data-bs-toggle="collapse" data-bs-target="#tb" value="expand" type="button">expand</button>
+
+    <script src="/static/script.js"></script>
+
+</div>
+
+<div class="collapse" id="tb">
+    <table class="center" style="width: 75%">
+        <tr>
+            <th>quantity</th>
+            <th>x10</th>
+            <th>order</th>
+            <th>$ price</th>
+            <th>symbol</th>
+            <th class="right">name</th>
+        </tr>
+        {% for row in table %}
+        <tr style="text-align: right">
+            <form id="aa1" name="quick-order">
+            <input hidden name="quick-order" type="text">
+            <td><input autocomplete="off" name="shares" min="0" type="number"></td>
+            <td><select name="multiplier" type="number"><option value="1">1</option>
+                <option value="10">10</option>
+                <option value="100">100</option>
+                <option value="1000">1000</option></select></td>
+                <td><button class="btn btn-sm btn-success" formid="aa1" formaction="/buy" formmethod="post" name="symbol" value="{{ row['symbol'] }}" type="submit">buy</button>
+                <button class="btn btn-sm btn-danger" formid="aa1" formaction="/sell" formmethod="post" name="symbol" value="{{ row['symbol'] }}" type="submit">sell</button></td>
+            </form>
+            {% for value in row %}
+            <td>{{ row[value] }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

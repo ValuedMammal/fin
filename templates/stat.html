@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+
+{% block title %}
+    Stats
+{% endblock %}
+
+
+{% block main %}
+
+
+<table style="width: 80%">
+<tr>
+    <th>position</th>
+    <th>user</th>
+    <th>largest holding</th>
+    <th>portfolio value ex-cash</th>
+</tr>
+{% if list %}
+    {% for i in list %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ i.name }}</td>
+        <td>{{ i.symbol }}</td>
+        <td>{{ i.sum | usd }}</td>
+        {% if session["user_id"] and i.user_id == session["user_id"] %}
+            <td>
+            <form action="/publish" method="post" id="pub">
+            <button class="btn btn-sm btn-light" name="publish" type="submit">publish to nostr</button></form>
+            </td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+{% endif %}
+</table>
+
+
+{% endblock main %}
+
+{% block footer %}
+<footer class="mb-5 small text-center text-muted"><div>
+    Trading securities or financial derivatives involves substantial risk of loss. Past performance is not indicative of future results.
+</div></footer>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Find Stocks
+{% endblock %}
+
+
+{% block main %}
+
+<!-- Search quotes -->
+<div class="mb-3">
+<form class="left" action="/quoted" method="get" name="get-quote">
+   <input autocomplete="off" autofocus class="mx-auto w-auto left" id="q0" name="name" placeholder="Symbol or Name" type="search">
+   <button class="btn btn-sm btn-primary" type="submit">Get Price</button>
+</form>
+</div>
+
+   <script src="/static/script.js"></script>
+
+<div>
+   <table style="width: 50%">
+      <tr>
+      {% if quote %}
+         <td>{{ quote.symbol }}</td>
+         <td>{{ quote.name }}</td>
+         {% if not quote.symbol in symbols %}
+            <td>
+            <form action="/watch" method="post">
+            <button class="btn btn-outline-danger opacity-75" name="symbol" value="{{ quote.symbol }}" type="submit" >Add to watchlist</button>
+            </form>
+            </td>
+         {% else %}
+            <td>
+            <button class="btn btn-outline-secondary opacity-75" disabled type="submit" >watching!</button>
+            </td>
+         {% endif %}
+      {% endif %}
+      </tr>
+   </table>
+</div>
+
+{% endblock %}

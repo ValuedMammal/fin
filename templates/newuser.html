@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+
+{% block main %}
+    <!-- Toggle theme button -->
+    <form action="/" method="post" id="i0" name="theme">
+        <button class="btn btn-sm btn-outline-secondary" name="mood" type="submit">Mood</button>
+    </form>
+    <br>
+
+    <!-- Quick search -->
+    <div style="text-align: right; font-size: small;">
+        <form action="/quoted" method="get" id="i1">
+            <div><label>Quick Search</label></div>
+            <input hidden name="quick-search" type="text">
+            <input autocomplete="off" class="mx-auto w-auto" name="name" placeholder="symbol" type="search">
+            <button class="btn btn-sm btn-secondary opacity-75" name="quick-search" type="submit">Go</button>
+        </form>
+    </div>
+
+    <!-- Greeting -->
+    <h1 class="left">Hello, {{ user }}</h1>
+    <div>
+    <h3 class="left">Funds available to trade: {{ cash | usd }}</h3>
+    </div>
+    <br><br>
+
+    <!-- Default portfolio table -->
+    {{ session["portfolio"].cash }}  <!-- for dev purpose only -->
+    <h3 class="left">Holdings</h3>
+    <div>
+    <table class="right" style="width: 60%">
+        <tr>
+            <th class="left">Symbol</th>
+            <th>Qty</th>
+            <th>$ Last price</th>
+            <th>$ Mkt value</th>
+        </tr>
+
+        <tr>
+            <td class="left">nothing here</td>
+        </tr>
+    </table>
+    </div>
+{% endblock main %}

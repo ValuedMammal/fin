@@ -1,0 +1,14 @@
+{% if row %}
+    <td> {{ row[0]["symbol"] }} </td>
+    <td> {{ row[0]["name"] }} </td>
+    {% if not row[0]["symbol"] in symbols %}
+        <td>
+        <form action="/watch" method="post">
+        <button class="btn btn-outline-danger opacity-75" name="symbol" value="{{ row[0]['symbol'] }}" type="submit" >Add to watchlist</button>
+        </form>
+        </td>
+    {% else %}
+        <td><button class="btn btn-outline-secondary opacity-75" disabled type="submit" >watching!</button></td>
+    {% endif %}
+{% endif %}
+

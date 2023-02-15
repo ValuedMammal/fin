@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Buy
+{% endblock %}
+
+
+{% block main %}
+
+   <form action="/buy" method="post" id="b1">
+      
+      <!-- SYMBOL-->
+      <div class="mb-3">
+         <input class="mx-auto w-auto" disabled type="text"></td>
+         <input autocomplete="off" autofocus class="mx-auto w-auto" name="symbol" placeholder="SYMBOL" type="text">
+      </div>
+      
+      <!-- SHARES -->
+      <div class="mb-3">
+         <input class="mx-auto w-auto" disabled type="text"></td>
+         <input autocomplete="off" class="mx-auto w-auto" id="b-shares" name="b-shares" placeholder="NUM SHARES" type="text">
+      </div>
+      
+      <!-- DOLLARS -->
+      <div class="mb-3">
+         <input class="mx-auto w-auto" disabled type="text"></td>
+         <input autocomplete="off" class="mx-auto w-auto" id="s-dollars" disabled name="dollars" placeholder="$ TO SPEND" type="text">
+      </div>
+      
+      <!-- FORM SWITCH-->
+      <div class="mb-3 form-check form-switch" style="margin-left: 42%; text-align: left;">
+         <input class="mx-auto w-auto form-check-input form-switch" id="flexSwitch" type="checkbox" onchange="buySwitch()">
+         <label for="flexSwitch">Trade cash value</label>
+      </div>
+
+      <!-- SUBMIT -->
+      <div>
+         <button class="btn btn-secondary" disabled type="submit">Sell Shares</button>
+         <button class="btn btn-outline-success" type="submit">Buy Shares</button>
+         <button class="btn btn-success" name="maximum-order-size" type="submit">Buy Max</button>
+      </div>
+   
+   </form>
+
+      <script src="/static/script.js"></script>
+
+{% endblock %}
