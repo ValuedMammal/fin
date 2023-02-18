@@ -23,20 +23,20 @@
     </div>
 
     <!-- Greeting -->
-    <h1 class="left">Hello, {{ user }}</h1>
+    <h1 class="left">Hello, {{ g.user["name"] }}</h1>
     <div>
-    <h3 class="left">Net liq: {{ total | usd }}</h3>
-    <h3 class="left">Funds available to trade: {{ cash | usd }}</h3>
+    <h3 class="left">Net liq: ${{ (sum + cash)|usd }}</h3>
+    <h3 class="left">Funds available to trade: ${{ cash | usd }}</h3>
     </div>
     <br><br>
-    <div>{{ session["portfolio"].holdings }}</div> <!-- for dev purpose only -->
+    <div>{{ g.user.holdings }}</div> <!-- for dev purpose only -->
 
     <h3 class="left">Holdings</h3>
 
     <!-- Quote refresh button -->
     <!-- <div class="right" style="width: 42%">
     <form action="/" method="post" id="i2">
-        <button class="btn btn-sm btn-info opacity-75" name="quotes" type="submit">Refresh</button>
+        <button class="btn btn-sm btn-info opacity-75" name="refresh" type="submit">Refresh</button>
     </form>
     </div> -->
 
@@ -54,7 +54,7 @@
             {% if row.qty != 0 and row.name != 'cash' %}
             <tr>
             <td class="left">{{ row["symbol"] }}</td>
-            <td>{{ row["qty"] }}</td>
+            <td>{{ row["qty"] | usd }}</td>
             <td>{{ row["price"] }}</td>
             <td>{{ row["value"] }}</td>
             </tr>
@@ -64,7 +64,7 @@
             <td></td>
             <td></td>
             <td>total</td>
-            <td>{{ sum | usd }}</td>
+            <td>${{ sum | usd }}</td>
         </tr>
     </table>
     </div>

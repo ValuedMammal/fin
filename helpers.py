@@ -2,39 +2,43 @@ import os
 import requests
 import urllib.parse
 
-from flask import redirect, render_template, request, session
+from flask import redirect, render_template, request, session, g
 from functools import wraps
 
 
-class Portfolio:
-    def __init__(self, cash, holdings):
+class User:
+    def __init__(self, id, name, cash):
+        self.id = id
+        self.name = name
+        self.theme = None
         self.cash = cash
-        self.holdings = holdings
+        self.holdings = []
 
-class Holding:
-    pass
 
-# Return list of symbols in holdings (non-zero qty only?)
-def get_symbols():
-    if "user_id" not in session:
-        return None     # unnecessary? won't call fn unless logged in
-    h = session["portfolio"].holdings    # is this always true?
+def get_symbols(watching=False):
+    """Return list of symbols in user holdings"""
+    
+    h = g.user.holdings
     symbols = []
-    for i in range(len(h)):
-        if h[i]["qty"] > 0:
-            symbols.append(h[i]["name"])
+    if watching:    # include symbols where qty held is 0
+        for i in range(len(h)):
+            symbols.append(h[i]["symbol"])
+    else:
+        for i in range(len(h)):
+            if h[i]["qty"] > 0:
+                symbols.append(h[i]["symbol"])
     return symbols
 
-# Return qty owned of symbol
+
 def quantity_owned(symbol):
-    if "user_id" not in session:
-        return None
-    h = session["portfolio"].holdings
+    """Return quantity owned of an asset by symbol"""
+    
+    h = g.user.holdings
     for i in range(len(h)):
         if symbol == h[i]["symbol"]:
             qty = h[i]["qty"]
             return qty
-    return 0
+    return None
 
 
 def apology(message, code=400):
@@ -66,8 +70,8 @@ def login_required(f):
     return decorated_function
 
 
-def lookup(row):
-    
+# for dev purpose
+def fetch_quote(row):    
     return {
         "symbol": row[0]["symbol"],
         "name": row[0]["name"],
@@ -75,30 +79,34 @@ def lookup(row):
     }
 
 
-# def lookup(symbol):
-#     """Look up quote for symbol."""
+def lookup(symbol):
+    """Look up quote for symbol."""
 
-#     # Contact API
-#     try:
-#         api_key = os.environ.get("API_KEY")
-#         url = f"https://cloud.iexapis.com/stable/stock/{urllib.parse.quote_plus(symbol)}/quote?token={api_key}"
-#         response = requests.get(url)
-#         response.raise_for_status()
-#     except requests.RequestException:
-#         return None
+    # Contact API
+    try:
+        api_key = os.environ.get("API_KEY")
+        url = f"https://cloud.iexapis.com/stable/stock/{urllib.parse.quote_plus(symbol)}/quote?token={api_key}"
+        response = requests.get(url)
+        response.raise_for_status()
+    except requests.RequestException:
+        return None
 
-#     # Parse response
-#     try:
-#         quote = response.json()
-#         return {
-#             "name": quote["companyName"],
-#             "price": float(quote["latestPrice"]),
-#             "symbol": quote["symbol"]
-#         }
-#     except (KeyError, TypeError, ValueError):
-#         return None
+    # Parse response
+    try:
+        quote = response.json()
+        return {
+            "name": quote["companyName"],
+            "price": float(quote["latestPrice"]),
+            "symbol": quote["symbol"]
+        }
+    except (KeyError, TypeError, ValueError):
+        return None
 
 
-def usd(value):
+def two_f(value):
     """Format value as USD."""
-    return f"${value:,.2f}"
+    return f"{value:,.2f}"
+    
+
+
+

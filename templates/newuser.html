@@ -23,14 +23,14 @@
     </div>
 
     <!-- Greeting -->
-    <h1 class="left">Hello, {{ user }}</h1>
+    <h1 class="left">Hello, {{ g.user.name }}</h1>
     <div>
     <h3 class="left">Funds available to trade: {{ cash | usd }}</h3>
     </div>
     <br><br>
 
     <!-- Default portfolio table -->
-    {{ session["portfolio"].cash }}  <!-- for dev purpose only -->
+    <!-- {{ g.user.cash }}   for dev purpose only -->
     <h3 class="left">Holdings</h3>
     <div>
     <table class="right" style="width: 60%">
