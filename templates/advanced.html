@@ -25,16 +25,17 @@
         <tr style="text-align: right">
             <form id="aa1" name="quick-order">
             <input hidden name="quick-order" type="text">
-            <td><input autocomplete="off" name="shares" min="0" type="number"></td>
-            <td><select name="multiplier" type="number"><option value="1">1</option>
-                <option value="10">10</option>
-                <option value="100">100</option>
-                <option value="1000">1000</option></select></td>
+                <td><input autocomplete="off" name="shares" min="0" type="number"></td>
+                <td><select name="multiplier" type="number">
+                    <option value="1">1</option>
+                    <option value="10">10</option>
+                    <option value="100">100</option>
+                    <option value="1000">1000</option></select></td>
                 <td><button class="btn btn-sm btn-success" formid="aa1" formaction="/buy" formmethod="post" name="symbol" value="{{ row['symbol'] }}" type="submit">buy</button>
-                <button class="btn btn-sm btn-danger" formid="aa1" formaction="/sell" formmethod="post" name="symbol" value="{{ row['symbol'] }}" type="submit">sell</button></td>
+                    <button class="btn btn-sm btn-danger" formid="aa1" formaction="/sell" formmethod="post" name="symbol" value="{{ row['symbol'] }}" type="submit">sell</button></td>
             </form>
             {% for value in row %}
-            <td>{{ row[value] }}</td>
+                <td>{{ row[value] }}</td>
             {% endfor %}
         </tr>
         {% endfor %}

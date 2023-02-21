@@ -21,7 +21,7 @@
         {% for row in trades %}
             <tr>
             {% for value in row %}
-                {% if loop.index == 3 %}
+                {% if loop.index == 3 or loop.index == 4 %}
                 <td>{{ row[value] | usd }}</td>
                 {% else %}
                 <td>{{ row[value] }}</td>

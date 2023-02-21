@@ -13,32 +13,7 @@ class User:
         self.theme = None
         self.cash = cash
         self.holdings = []
-
-
-def get_symbols(watching=False):
-    """Return list of symbols in user holdings"""
-    
-    h = g.user.holdings
-    symbols = []
-    if watching:    # include symbols where qty held is 0
-        for i in range(len(h)):
-            symbols.append(h[i]["symbol"])
-    else:
-        for i in range(len(h)):
-            if h[i]["qty"] > 0:
-                symbols.append(h[i]["symbol"])
-    return symbols
-
-
-def quantity_owned(symbol):
-    """Return quantity owned of an asset by symbol"""
-    
-    h = g.user.holdings
-    for i in range(len(h)):
-        if symbol == h[i]["symbol"]:
-            qty = h[i]["qty"]
-            return qty
-    return None
+        self.badges = []
 
 
 def apology(message, code=400):

@@ -6,12 +6,7 @@
 
 
 {% block main %}
-    <!-- Toggle theme button -->
-    <form action="/" method="post" id="i0" name="theme">
-        <button class="btn btn-sm btn-outline-secondary" name="mood" type="submit">Mood</button>
-    </form>
-    <br>
-
+   
     <!-- Quick search -->
     <div style="text-align: right; font-size: small;">
         <form action="/quoted" method="get" id="i1">
@@ -29,8 +24,7 @@
     </div>
     <br><br>
 
-    <!-- Default portfolio table -->
-    <!-- {{ g.user.cash }}   for dev purpose only -->
+    <!-- empty portfolio table -->
     <h3 class="left">Holdings</h3>
     <div>
     <table class="right" style="width: 60%">
@@ -40,9 +34,8 @@
             <th>$ Last price</th>
             <th>$ Mkt value</th>
         </tr>
-
         <tr>
-            <td class="left">nothing here</td>
+            <td class="left" style="font-style: italic;">nothing here</td>
         </tr>
     </table>
     </div>

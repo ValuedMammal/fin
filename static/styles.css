@@ -2,6 +2,7 @@
 nav .navbar-brand
 {
     font-size: xx-large;
+    font-family: Helvetica;
 }
 
 /* Colors for brand */
@@ -34,7 +35,7 @@ nav .navbar-brand .gray
     color: gray;
 }
 
-/* Home screen */
+/* Text aligns */
 .left {
     text-align: left;
 }
@@ -43,6 +44,15 @@ nav .navbar-brand .gray
 }
 .center {
     text-align: center;
+}
+
+/* Settings */
+.settings {
+    margin-left: 15%;
+}
+.settings .radio {
+
+    padding-right: 1%;
 }
 
 /* Color scheme */

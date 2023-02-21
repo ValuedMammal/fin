@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+
+{% block title %}Settings{% endblock %}
+
+
+{% block main %}
+
+<!-- Form -->
+<form action="/settings" method="post">
+<div class="left settings">
+   <h3>Settings</h3>
+   <hr>
+   <br>
+
+   <!-- color theme preference -->
+   <p>Select color theme preference</p>
+   <div class="mb-3">
+      <input type="radio" id="auto" name="theme" value="auto">
+      <label class="radio" for="auto">auto</label>
+
+      <input type="radio" id="light" name="theme" value="light">
+      <label class="radio" for="light">light</label>
+
+      <input type="radio" id="dark" name="theme" value="dark">
+      <label class="radio" for="dark">dark</label>
+   </div>
+   <hr>
+
+   <!-- other prefs -->
+   <div class="mb-3">
+      <p>Other preferences:</p>
+      <p style="font-style: italic;">nothing here</p>
+   </div>
+   <hr>
+</div>
+
+<!-- Submit -->
+   <button class="btn btn-secondary center" type="submit">Save</button>
+</form>
+<br><br>
+
+<!-- Achievements -->
+<div class="left settings">
+   <h3>My achievements</h3>
+   <hr>
+</div>
+<br>
+
+<div class="mb-3">
+<table class="table {{ 'table-dark' if session['theme'] == 'dark' else 'table-light' }}">
+<tr>
+   <th class="left">Name</th>
+   {% for i in unlockables %}
+      <th>{{ i.name }}</th>
+   {% endfor %}
+</tr>
+<tr>
+   <td class="left">{{ g.user.name }}</td>
+   {% for i in unlockables %}
+      {% if i.id in badges %}
+         <td>&#x2705;</td>
+      {% else %}
+         <td>&#x2716;</td>
+      {% endif %}
+   {% endfor %}
+</tr>
+<tr style="font-size: medium">
+   <td>--</td>
+   {% for i in unlockables %}
+      <td>{{ i.description }}</td>
+   {% endfor %}
+</tr>
+</table>
+</div>
+
+<!-- Reset data -->
+<div class="left small" style="padding-top: 20%">
+   <p>Warning: this action will clear user holdings and trade history and restore account defaults</p>
+
+   <form action="/settings" method="post">
+   <div>
+      <button class="btn btn-outline-danger" id="sett1" name="reset-me" type="submit" value="reset-me">Reset user data</button>
+
+      <!-- admin only: reset all users -->
+      {% if g.user.id == 1 %}
+         <button class="btn btn-outline-danger" id="sett2" name="reset-all" type="submit" value="reset-all">Reset all users</button>
+      {% endif %}
+   </div>
+   </form>
+</div>
+
+{% endblock %}

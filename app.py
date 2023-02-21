@@ -1,4 +1,5 @@
 import os
+import time
 
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session, g
@@ -6,7 +7,7 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import (
-    apology, get_symbols, fetch_quote, login_required, lookup, quantity_owned, two_f, User
+    apology, fetch_quote, login_required, lookup, two_f, User
 )
 
 
@@ -47,10 +48,11 @@ def load_user():
         return        
     else:
         user_id = session["user_id"]
-        row = db.execute('SELECT * FROM users u, settings s'
-            ' WHERE s.user_id=u.id' 
-            ' AND u.id=?', (user_id,)
-        )
+        row = db.execute('SELECT username, cash, theme' 
+                ' FROM  users u, settings s'
+                ' WHERE s.user_id=u.id'
+                ' AND   u.id=?', user_id)
+        #
         name = row[0]["username"]
         cash = row[0]["cash"]
         theme = row[0]["theme"]
@@ -63,8 +65,8 @@ def load_user():
             ' AND     h.user_id=?', (user_id,)
         )
         if len(tb) > 0:
-            for row in range(len(tb)):
-                g.user.holdings.append(tb[row])
+            for i in range(len(tb)):
+                g.user.holdings.append(tb[i])
         return
 
 
@@ -86,17 +88,6 @@ def index():
     
     # POST
     if request.method == "POST":
-
-        # Toggle theme preference
-        if "mood" in request.form:
-            if session["theme"] != 'dark':
-                theme = 'dark'
-            else:
-                theme = 'light'
-            db.execute("UPDATE settings SET theme=? WHERE user_id=?", theme, user_id)
-            g.user.theme = theme
-            return redirect("/")
-
         # have this turned off while we sort out new api functionality
         # For all asset id in holdings
         if "refresh" in request.form:
@@ -116,8 +107,12 @@ def index():
     # GET
     if g.user.theme == 'dark':
         session["theme"] = 'dark'
-    # elif theme == 'auto' and localtime between 6p and 7a:
-        # session["theme"] = 'dark'
+    elif g.user.theme == 'auto':
+        hr = time.localtime().tm_hour
+        if hr > 18 or hr < 7:
+            session["theme"] = 'dark'
+    else:
+        session["theme"] = 'light'
 
     # Create portfolio
     cash = g.user.cash
@@ -179,7 +174,7 @@ def index():
 def quote():
     """Go to quote search page."""
 
-    return render_template("quote.html", quote=None, symbols=get_symbols(watching=True))
+    return render_template("quote.html", symbols=get_symbols(watching=True))
 
 
 @app.route("/quoted")
@@ -228,7 +223,9 @@ def buy():
 
     # POST
     user_id = session["user_id"]
+    badges = get_badges(user_id)
     error = None
+    events = []     # listen for new achievements, stores skull_id
     location = "/buy"
     max = None
     dollars = None
@@ -261,12 +258,12 @@ def buy():
     elif "quick-order" in request.form:
         try:
             shares = float(request.form["shares"])
-            multi = request.form["multiplier"]
+            multi = float(request.form["multiplier"])
         except:
             error = "invalid quantity"
         else:
             location = "/"
-            shares = round((shares * multi), 2)
+            shares = round(shares * multi, 4)
             if not shares or not shares > 0:
                 error = "invalid quantity"
 
@@ -332,11 +329,25 @@ def buy():
         return redirect(location)
     
     save_trade(quote, trade, qty, cash)
+    if 1 not in badges: # event s1
+        events.append(1)
+    if location == "/" and 2 not in badges: # event s2
+        events.append(2)
+    if shares >= 1000 and 5 not in badges: # event s5
+        events.append(5)
+    if len(events) > 1 and 3 not in badges: # event s3
+        events.append(3)
+
     if max or shares > 100:
         flash("executed")
     else:
-        flash("done")
-    return redirect("/")
+        flash("done")    
+    if len(events) > 0:
+        new_badges = add_badges(events)
+        for i in range(len(new_badges)):
+            name = new_badges[i]
+            flash(f"Achievement: {name}")
+    return redirect("/")    
 
 
 @app.route("/sell", methods=["GET", "POST"])
@@ -350,8 +361,10 @@ def sell():
 
     # POST
     user_id = session["user_id"]
+    badges = get_badges(user_id)
     location = "/sell"
     error = None
+    events = []
     max = None
     dollars = None
     
@@ -381,13 +394,13 @@ def sell():
     # Quick order form - shares come from separate form, always return home
     elif "quick-order" in request.form:
         try:
-            shares = round(float(request.form.get("shares")), 2)
-            multi = int(request.form.get("multiplier"))
+            shares = float(request.form["shares"])
+            multi = float(request.form["multiplier"])
         except:
             error = "invalid quantity"
         else:    
             location = "/"
-            shares = (shares * multi)
+            shares = round(shares * multi, 4)
             if not shares or not shares > 0:
                 error = "invalid quantity"
 
@@ -433,6 +446,7 @@ def sell():
     elif shares > qty:
         error = "rejected: low shares"
     cash += (price * shares)
+    profit = is_profit(asset_id, price, qty)
     qty -= shares
     trade = {
         "type": "sell",
@@ -447,10 +461,24 @@ def sell():
         return redirect(location)
     
     save_trade(quote, trade, qty, cash)
+    if location == "/" and 2 not in badges: # event s2
+        events.append(2)
+    if profit and 4 not in badges: # event s4
+        events.append(4)
+    if shares >= 1000 and 5 not in badges: # event s5
+        events.append(5)
+    if len(events) > 1 and 3 not in badges: # event s3
+        events.append(3)
+    
     if max or shares > 100:
         flash("executed")
     else:
         flash("done")
+    if len(events) > 0:
+        new_badges = add_badges(events)
+        for i in range(len(new_badges)):
+            name = new_badges[i]
+            flash(f"Achievement: {name}")
     return redirect("/")
 
 
@@ -681,9 +709,133 @@ def publish():
     return apology("Not implemented")
 
 
+def get_symbols(watching=False):
+    """Return list of symbols in user holdings"""
+    
+    h = g.user.holdings
+    symbols = []
+    if watching:    # include symbols where qty held is 0
+        for i in range(len(h)):
+            symbols.append(h[i]["symbol"])
+    else:
+        for i in range(len(h)):
+            if h[i]["qty"] > 0:
+                symbols.append(h[i]["symbol"])
+    return symbols
+
+
+def quantity_owned(symbol):
+    """Return quantity owned of an asset by symbol"""
+    
+    h = g.user.holdings
+    for i in range(len(h)):
+        if symbol == h[i]["symbol"]:
+            qty = h[i]["qty"]
+            return qty
+    return None
+
+
+def is_profit(asset_id, price, qty):
+    """Return True if proceeds from sale exceeds cash outlay"""
+    
+    # long side only
+    # is holding this symbol? assume yes since we're currently selling
+    # qty arg is qty owned before sale
+    # profit is True if this trade price > average cost basis        
+    
+    # Query all trades of this symbol
+    tb = db.execute('select * from trades'
+            ' where asset_id = ?'
+            ' and user_id = ?' , asset_id, g.user.id)
+    
+    # Avg basis = (total outlay - total proceeds) / current qty
+    sum = 0
+    for row in range(len(tb)):
+        t = tb[row]
+        if t["type"] == 'buy':
+            sum += (t["price"] * t["qty"])
+        else:
+            sum -= (t["price"] * t["qty"])
+    basis = sum / qty
+    return (price > basis)
+
+
+def get_badges(id): 
+    """Query database for user's earned badges"""
+    ##
+    l = []
+    tb = db.execute('SELECT skull_id FROM badges WHERE user_id=?', id)
+    if len(tb) > 0:
+        for i in range(len(tb)):
+            l.append(tb[i]["skull_id"])
+    return l
+
+
+def add_badges(events):
+    """Update user achievements"""
+    ##
+    user_id = session["user_id"]
+    for i in range(len(events)):
+        skull_id = events[i]
+        db.execute('INSERT INTO badges (skull_id, user_id) VALUES (?,?)', skull_id, user_id)
+
+    l = []
+    tb = db.execute('SELECT id, name FROM skulls')
+    for i in range(len(tb)):
+         if tb[i]["id"] in events:
+             l.append(tb[i]["name"])
+    return l
+
+
 @app.route("/settings", methods=["GET" , "POST"])
 @login_required
 def settings():
     """Configure user settings"""
-    # #
-    return apology("Not implemented")
+    
+    user_id = session["user_id"]
+    
+    # GET
+    if request.method == "GET":
+        badges = get_badges(user_id)
+        unlockables = db.execute('select * from skulls where id < 6') # named badges 1-5
+        return render_template("settings.html", badges=badges, unlockables=unlockables)
+    
+    # POST
+    if "theme" in request.form:
+        theme = request.form.get("theme")
+        db.execute('UPDATE settings SET theme=? WHERE user_id=?', theme, user_id)
+        
+        # here, duplicating code from index route, plus we've hard coded the time of day
+        # when dark is active. the alternative is to place the logic in `before_request`
+        # but that seems overkill when already handled by session. ideally, we get user preference
+        # from device OS but that's beyond the current scope
+        if theme == 'dark':
+            session["theme"] = 'dark'
+        elif theme == 'auto':
+            hr = time.localtime().tm_hour
+            if hr > 18 or hr < 7:
+                session["theme"] = 'dark'
+        else:
+            session["theme"] = 'light'
+        flash("saved")
+        return redirect("/settings")
+        
+    # Reset this user
+    default_cash = 1*(10**6)
+
+    if "reset-me" in request.form:
+        db.execute('DELETE FROM trades WHERE user_id=?', user_id)
+        db.execute('DELETE FROM holdings WHERE user_id=?', user_id)
+        db.execute('UPDATE users SET cash=? WHERE id=?', default_cash, user_id)
+        db.execute('DELETE FROM badges WHERE user_id=?', user_id)
+    
+    # Reset all
+    else:
+        db.execute('DELETE FROM trades WHERE user_id LIKE "%"')
+        db.execute('DELETE FROM holdings WHERE user_id LIKE "%"')
+        db.execute('UPDATE users SET cash=? WHERE id LIKE "%"', default_cash)
+        db.execute('DELETE FROM badges WHERE user_id LIKE "%"')
+        
+    flash("done")
+    return redirect("/")
+    

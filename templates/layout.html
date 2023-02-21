@@ -18,16 +18,16 @@
 
         <script src="/static/script.js"></script>
 
-        <title>CS Bets: {% block title %}{% endblock %}</title>
+        <title>{% block title %}{% endblock %}</title>
 
     </head>
 
     <body class="{{ 'dark' if session['theme'] == 'dark' }}">
-    <!-- <body> -->
 
-        <nav class="navbar navbar-dark bg-dark border navbar-expand-md">
+        <nav class="navbar navbar-dark bg-dark border navbar-expand-md"> <!---->
             <div class="container-fluid">
-                <a class="navbar-brand" href="/"><span class="blue">C</span><span class="blue">$</span><span class="gray">5</span><span class="gray">0</span> <span class="orange">Bets</span></a>
+                <!-- <a class="navbar-brand" href="/"><span class="blue">C</span><span class="blue">$</span><span class="gray">5</span><span class="gray">0</span> <span class="orange">Bets</span></a> -->
+                <a class="navbar-brand" href="/"><span class="orange">flask fin 50</span></a>
                 <button aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler" data-bs-target="#navbar" data-bs-toggle="collapse" type="button">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -55,13 +55,14 @@
             </div>
         </nav>
 
-        {% if get_flashed_messages() %}
+        {% for msg in get_flashed_messages() %}
             <header>
                 <div class="alert alert-primary mb-0 text-center" role="alert">
-                    {{ get_flashed_messages() | join(" ") }}
+                    {{ msg }}
+                    <!-- {{ get_flashed_messages() | join(" ") }} -->
                 </div>
             </header>
-        {% endif %}
+        {% endfor %}
 
         <main class="container-fluid py-5 text-center">
             {% block main %}{% endblock %}
