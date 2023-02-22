@@ -1,5 +1,5 @@
 
-/* On page load script
+/* On page load starter
 function myFunc() {
     document.addEventListener('DOMContentLoaded', function() {
         // inline function
@@ -14,20 +14,22 @@ input.addEventListener('input', async function() {
     document.querySelector('tr').innerHTML = row;
 });
 
+
 // Show/Hide button, advanced.html
-var btn = document.getElementById('aaa');
-btn.addEventListener('click', function() {
+function hide() {
+    var btn = document.getElementById('aaa');
     if (btn.value == 'expand')
     {
-        btn.innerHTML = 'hide';
         btn.value = 'hide';
+        btn.innerHTML = 'hide';
     }
     else
     {
-        btn.innerHTML = 'expand';
         btn.value = 'expand';
+        btn.innerHTML = 'expand';
     }
-});
+}
+
 
 // Buy: toggle dollars to spend
 function buySwitch() {
@@ -48,6 +50,7 @@ function buySwitch() {
         d.disabled = true;
     }
 }
+
 
 // Sell: toggle dollars to receive
 function sellSwitch() {
