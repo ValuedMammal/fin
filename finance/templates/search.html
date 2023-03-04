@@ -1,0 +1,19 @@
+
+{% if row %}
+
+    <td> {{ row.symbol }} </td>
+    <td> {{ row.name }} </td>
+
+    {% if not row.id in watching %}
+        <td>
+            <form action="/watch" method="post">
+            <input hidden name="asset" value="{{ row.id }}">
+            <button class="btn btn-outline-danger opacity-75" name="symbol" value="{{ row.symbol }}" type="submit" >Add to watchlist</button>
+            </form>
+        </td>
+
+    {% else %}
+        <td><button class="btn btn-outline-secondary opacity-75" disabled type="submit" >watching!</button></td>
+    {% endif %}
+
+{% endif %}

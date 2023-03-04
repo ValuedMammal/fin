@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block main %}
+    
+    <!-- Greeting -->
+    <div class="home left">
+        <h3>Hello, {{ g.user['name'] }}</h3>
+        <h4>net liquidating value: ${{ total }}</h4>
+        <h4>buying power: ${{ cash }}</h4>
+        <hr>
+        <br><br>
+        
+        <!-- Portfolio -->
+        <h3>Holdings</h3>
+        <hr>
+    </div>
+
+    <table class="table table-striped {{ 'table-dark' if session['theme'] == 'dark' }}">
+        <tr>
+            <th>symbol</th>
+            <th>name</th>
+            <th>qty</th>
+            <th>$ price</th>
+            <th>$ value</th>
+        </tr>
+    
+        {% if holdings %}
+            {% for row in holdings if row.qty > 0 %}
+                <tr>
+                    <td>{{ row.symbol }}</td>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.qty }}</td>
+                    <td>{{ row.price }}</td>
+                    <td>{{ row.qty * row.price }}</td>
+                </tr>
+            {% endfor %}
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>total</td>
+                <td>${{ asset_val }}</td>
+            </tr>
+
+        {% else %}
+        <tr>
+            <td class="ital">nothing here</td>
+        </tr>
+
+        {% endif %}
+    </table>
+    
+    <!-- Watch list -->
+    <!-- w quick buy/sell form -->
+    
+    {% if holdings %}
+    <br><br>
+    <div class="home left">
+        <h3>Quick hits</h3>
+        <hr>
+    </div>
+        <table class="table table-striped {{ 'table-dark' if session['theme'] == 'dark' }}">
+            <tr>
+                <th>shares</th>
+                <th>send</th>
+                <th>price</th>
+                <th>symbol</th>
+                <th>name</th>
+                <th></th>
+            </tr>
+
+        {% for row in holdings %}
+            <tr>
+                <form action="/trade" id="i0" method="post">
+                        <input hidden name="view" value="index">
+                        <input hidden name="symbol" value="{{ row.symbol }}">
+                    <td><input autocomplete="off" name="shares" min="0" type="number"></td>
+                    <td>
+                        <button class="btn btn-sm btn-success" name="type" value="buy" type="submit">buy</button>
+                        <button class="btn btn-sm btn-danger" name="type" value="sell" type="submit">sell</button>
+                    </td>
+                </form>
+                <td>{{ row.price }}</td>
+                <td>{{ row.symbol }}</td>
+                <td>{{ row.name }}</td>
+                
+                {% if row.qty == 0 %}
+                <td>
+                    <form action="/unwatch" id="i1" method="post">
+                        <button class="btn btn-outline-danger" name="asset" value="{{ row.id }}">unwatch</button>
+                    </form>
+                </td>
+                {% endif %}
+                
+            </tr>
+        {% endfor %}
+
+        </table>
+    {% endif %}
+
+{% endblock main %}

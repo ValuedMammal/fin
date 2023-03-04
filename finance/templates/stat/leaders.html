@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+
+{% block title %}Leaders{% endblock %}
+
+
+{% block main %}
+
+    <table class="table {{ 'table-dark' if session['theme'] == 'dark' }}">
+        <tr>
+            <th>position</th>
+            <th>user</th>
+            <th>largest holding</th>
+            <th>portfolio value ex-cash</th>
+        </tr>
+
+    {% for i in list if list %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ i.name }}</td>
+            <td>{{ i.symbol }}</td>
+            <td>${{ i.sum|round(2) }}</td>
+            
+            {% if g.user and i.user_id == g.user["id"] %}
+                <td>
+                <form action="/publish" method="post" id="l0">
+                    <button class="btn btn-sm btn-light" name="publish" type="submit">publish to nostr</button>
+                </form>
+                </td>
+            {% endif %}
+        
+        </tr>
+    {% endfor %}
+    </table>
+
+{% endblock main %}
+
+
+{% block footer %}
+
+    <footer class="mb-5 small text-center text-muted">
+        <p>Trading securities or financial derivatives involves substantial risk of loss. Past performance is not indicative of future results.</p>
+    </footer>
+
+{% endblock %}

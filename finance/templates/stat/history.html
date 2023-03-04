@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}History{% endblock %}
+
+{% block main %}
+    
+    <!-- History -->
+    <div class="home left">
+        <h3>Trades</h3>
+        <hr>
+    </div>
+
+    <table class="table table-striped {{ 'table-dark' if session['theme'] == 'dark' }}">
+        <tr>
+            <th>type</th>
+            <th>symbol</th>
+            <th>qty</th>
+            <th>price</th>
+            <th>time UTC</th>
+        </tr>
+    
+    {% if trades %}
+        {% for row in trades %}
+        <tr>
+            <td>{{ row.type }}</td>
+            <td>{{ row.symbol }}</td>
+            <td>{{ row.qty }}</td>
+            <td>{{ row.price }}</td>
+            <td>{{ row.time }}</td>
+        </tr>
+        {% endfor %}
+    {% else %}
+        <tr>
+            <td class="ital">nothing here</td>
+        </tr>
+    {% endif %}
+
+    </table>
+    
+{% endblock main %}

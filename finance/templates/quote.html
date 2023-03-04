@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Quote{% endblock %}
+
+{% block main %}
+
+    <h3>Quote</h3>
+    <br>
+
+    <div class="mb-3">
+    <form method="post">
+        <input autocomplete="off" autofocus id="q0" name="symbol" placeholder="symbol" required type="text">
+        <button class="btn btn-primary" type="submit">Go</button>
+    </form>
+    </div>
+
+        <script>
+            var input = document.getElementById('q0');
+            input.addEventListener('input', async function() {
+                let response = await fetch('/search?q=' + input.value);
+                let row = await response.text();
+                document.querySelector('tr').innerHTML = row;
+            });
+        </script>
+    
+    <table class="table {{ 'table-dark' if session['theme'] == 'dark' }}">
+        <tr></tr>
+    </table>
+
+{% endblock main %}

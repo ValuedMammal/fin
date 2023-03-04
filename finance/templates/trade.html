@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Trade{% endblock %}
+
+{% block main %}
+
+    <h3>Buy/Sell</h3>
+    <br>
+    
+    <form method="post">
+            <input hidden name="view" value="main.trade">
+        <div class="mb-3">
+            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="symbol" name="symbol" placeholder="symbol" required type="text">
+        </div>
+        <div class="mb-3">
+            <input autocomplete="off" class="form-control mx-auto w-auto" id="shares" name="shares" placeholder="shares" required type="number">
+        </div>
+
+        <button class="btn btn-outline-success" name="type" value="buy" type="submit">Buy</button>
+        <button class="btn btn-outline-danger" name="type" value="sell" type="submit">Sell</button>
+    </form>
+
+
+{% endblock main %}
