@@ -4,11 +4,23 @@
 
 {% block main %}
     
+    <!-- Quick quote search -->
+    <div class="right">
+        <p>Quick search</p>
+        <form action="/quote" method="post">
+            <input autocomplete="off" id="i0" name="symbol" placeholder="symbol" type="text">
+            <button class="btn btn-sm btn-secondary" type="submit">Go</button>
+        </form>
+        <p style="margin-right: 7em;" id="query"></p>
+    </div>
+
+    
     <!-- Greeting -->
+    <br>
     <div class="home left">
         <h3>Hello, {{ g.user['name'] }}</h3>
-        <h4>net liquidating value: ${{ total }}</h4>
-        <h4>buying power: ${{ cash }}</h4>
+        <h4>net liquidating value: ${{ total|usd }}</h4>
+        <h4>buying power: ${{ cash|usd }}</h4>
         <hr>
         <br><br>
         
@@ -32,8 +44,8 @@
                     <td>{{ row.symbol }}</td>
                     <td>{{ row.name }}</td>
                     <td>{{ row.qty }}</td>
-                    <td>{{ row.price }}</td>
-                    <td>{{ row.qty * row.price }}</td>
+                    <td>{{ row.price|usd }}</td>
+                    <td>{{ (row.qty * row.price)|usd }}</td>
                 </tr>
             {% endfor %}
             <tr>
@@ -41,7 +53,7 @@
                 <td></td>
                 <td></td>
                 <td>total</td>
-                <td>${{ asset_val }}</td>
+                <td>${{ asset_val|usd }}</td>
             </tr>
 
         {% else %}
@@ -65,7 +77,7 @@
             <tr>
                 <th>shares</th>
                 <th>send</th>
-                <th>price</th>
+                <th>$ price</th>
                 <th>symbol</th>
                 <th>name</th>
                 <th></th>
@@ -73,16 +85,16 @@
 
         {% for row in holdings %}
             <tr>
-                <form action="/trade" id="i0" method="post">
+                <form action="/trade" id="i1" method="post">
                         <input hidden name="view" value="index">
                         <input hidden name="symbol" value="{{ row.symbol }}">
-                    <td><input autocomplete="off" name="shares" min="0" type="number"></td>
+                    <td><input autocomplete="off" name="shares" min="1" type="number"></td>
                     <td>
                         <button class="btn btn-sm btn-success" name="type" value="buy" type="submit">buy</button>
                         <button class="btn btn-sm btn-danger" name="type" value="sell" type="submit">sell</button>
                     </td>
                 </form>
-                <td>{{ row.price }}</td>
+                <td>{{ row.price|usd }}</td>
                 <td>{{ row.symbol }}</td>
                 <td>{{ row.name }}</td>
                 
@@ -92,6 +104,8 @@
                         <button class="btn btn-outline-danger" name="asset" value="{{ row.id }}">unwatch</button>
                     </form>
                 </td>
+                {% else %}
+                    <td></td>
                 {% endif %}
                 
             </tr>

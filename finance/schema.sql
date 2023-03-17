@@ -9,7 +9,7 @@ CREATE TABLE user (
 );
 CREATE TABLE asset (
    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-   class TEXT,
+   cls TEXT,
    symbol TEXT NOT NULL UNIQUE,
    name TEXT NOT NULL,
    price NUMERIC

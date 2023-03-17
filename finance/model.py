@@ -1,5 +1,6 @@
-from datetime import datetime
-from sqlalchemy import Table, Column, ForeignKey, Integer, String, Float, TIMESTAMP
+from sqlalchemy import (
+    Column, Float, ForeignKey, func, Integer, String, Table, TIMESTAMP
+)
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, relationship
 
@@ -27,7 +28,8 @@ asset = Table(
     Column("cls", String, default='stock'),
     Column("symbol", String, nullable=False),
     Column("name", String, nullable=False),
-    Column("price", Float)
+    Column("price", Float),
+    # UniqueConstraint("symbol"),
 )
 
 trade = Table(
@@ -39,7 +41,7 @@ trade = Table(
     Column("user_id", ForeignKey("user.id")),
     Column("qty", Float, nullable=False),
     Column("price", Float, nullable=False),
-    Column("time", TIMESTAMP, nullable=False, default=datetime.utcnow())
+    Column("time", TIMESTAMP, server_default=func.now()),
 )
 
 skull = Table(
@@ -82,7 +84,7 @@ class User(Base):
     # Badges
     badges: Mapped[list["Skull"]] = relationship(secondary=badge, back_populates="s_owners")
 
-    # Holdings
+    # Holdings - on del cascade
     holdings: Mapped[list["Hodl"]] = relationship(back_populates="user")
 
 
@@ -124,16 +126,8 @@ class Hodl(Base):
 
 # testing junk data
 sql_data = [
-    "insert into user (username, hash, cash) values ('test', 'pbkdf2:sha256:260000$zzyAjwpvjn8PLcjH$385d0f56484b89a1f336a2a7ac40749bcad1f8b083d2ca9a26b6414af8ca9802', 1000)",
-    "insert into asset (symbol, name, price) values ('AAPL', 'Apple Inc', 100.00)",
-    "insert into asset (symbol, name, price) values ('TSLA', 'Tesla', 100.00)",
+    "insert into user (username, hash, cash) values ('test', 'pbkdf2:sha256:260000$zzyAjwpvjn8PLcjH$385d0f56484b89a1f336a2a7ac40749bcad1f8b083d2ca9a26b6414af8ca9802', 1000000)",
+    "insert into asset (symbol, name, price) values ('AAPL', 'Apple Inc', 100.00), ('TSLA', 'Tesla', 100.00)",
+    "insert into holding (asset_id, qty, user_id) values (2, 2, 1)",
+    "insert into skull (name, description) values ('Achiever', 'Make a trade')"
 ]
-    # "insert into holding (asset_id, qty, user_id) values (2, 1, 1)",
-    # "insert into holding (asset_id, qty, user_id) values (2, 1, 1)",
-    # "insert into skull (name, description) values ('Achiever', 'Make a trade')"
-
-    # "insert into badge (skull_id, user_id) values (1, 1)"
-
-
-
-

@@ -1,30 +1,30 @@
 import time
+
 from flask import (
-    current_app, Blueprint, flash, g, redirect, render_template, request, session, url_for
+    Blueprint, flash, g, redirect, render_template, request, session, url_for
 )
 from sqlalchemy import select, text
 
-from finance.db import Session
 from finance.auth import login_required
+from finance.db import Session
+from finance.helpers import lookup, usd
 from finance.model import User, Asset, Hodl, Trade, Skull
-
 
 bp = Blueprint("main", __name__)
 
-    
 
 @bp.route("/", methods=["GET"])
 @login_required
 def index():
         
     user_id = g.user["id"]
-    asset_val = 0.0
+    asset_val = 0
     holdings = []    
 
     # Portfolio view
     with Session() as cur:
         u = cur.get(User, user_id)
-        cash = float(u.cash)
+        cash = u.cash
         sel = text(
             '''
             SELECT * FROM asset, holding
@@ -41,8 +41,8 @@ def index():
         
         # Set theme preference
         theme = cur.execute(text(
-            'select theme from settings where user_id = :i'
-            ),    {"i": user_id}
+            'SELECT theme FROM settings WHERE user_id = :i'
+            ), {"i": user_id}
         ).scalar()
 
     if theme == 'dark':
@@ -53,9 +53,7 @@ def index():
     else:
         session["theme"] = None
     
-    total = usd(cash + asset_val)
-    cash = usd(cash)
-    asset_val = usd(asset_val)
+    total = (cash + asset_val)
 
     return render_template("index.html", holdings=holdings, cash=cash, asset_val=asset_val, total=total)
     
@@ -68,57 +66,36 @@ def trade():
     if request.method == "POST":
         user_id = g.user["id"]
         symbol = request.form.get("symbol").upper()
+        shares = int(request.form.get("shares"))
         view = request.form.get("view")
         type = request.form.get("type")
         badges = get_badges()
         events = []     # listen for achievement events
 
-        with Session() as du:
-            
-            # Get user inventory
-            u = du.get(User, user_id)
-            cash = u.cash
-            
-            # Query for asset
-            row = du.execute(
-                select(Asset).where(Asset.symbol == symbol)
-            ).scalar()
-            if row is None:
-                unseen = True
-                du.rollback()
-            else:
-                unseen = False
-                price = row.price
-                asset_id = row.id
-                
-                # is holding?
-                h = du.get(Hodl, (asset_id, user_id))
-                if h is None:
-                    qty = 0
-                    new = True
-                else:
-                    qty = h.qty
-                    new = False
-                    # rollback
-        
-        if unseen:        
-            quote = lookup(symbol)
-            if quote is None:
-                flash("None")
-                return redirect(url_for(view))
-            else:
-                price = quote["price"]
-                name = quote["name"]
-        
-        shares = int(request.form.get("shares"))
-        val = round((shares * price), 4)
-        if shares is None or shares < 1:
-            flash("invalid quantity")
+        # Fetch quote
+        asset_id = None
+        quote = lookup(symbol)
+        if quote is None:
+            flash("None")
             return redirect(url_for(view))
+        price = quote["price"]
+        name = quote["name"]
+        val = (shares * price)
 
-        error = None
+        # Get user inventory
+        qty = 0
+        with Session() as db:
+            u = db.get(User, user_id)
+            cash = u.cash
+            a = db.execute(select(Asset).where(Asset.symbol == symbol)).scalar()
+            if a is not None:
+                asset_id = a.id
+                h = db.get(Hodl, (asset_id,user_id))
+                if h is not None:
+                    qty = h.qty
         
         # buy
+        error = None
         if type == 'buy':
             if val > cash:
                 error = "rejected low cash"
@@ -126,13 +103,13 @@ def trade():
             qty += shares
 
         # sell
-        elif type == 'sell':
+        else:
             if qty == 0:
                 error = "you don't own it"
             elif shares > qty:
                 error = "rejected low inventory"
             else:
-                profit = is_profit(asset_id, price, qty)
+                profit = is_profit(asset_id, val, qty)
                 cash += val
                 qty -= shares
 
@@ -141,41 +118,34 @@ def trade():
             return redirect(url_for(view))
         
         # Update tables: asset, holding, user, trade
-        with Session() as du:
-
-            # insert or update asset
-            if unseen:
-                du.add(
+        with Session() as db:
+            if asset_id is None:
+                db.add(
                     Asset(symbol=symbol, name=name, price=price)
                 )
+                a = db.execute(select(Asset).where(Asset.symbol == symbol))
+                asset_id = a.id
             else:
-                a = du.get(Asset, asset_id)
-                a.price = price
-            
-            # set cash
-            u = du.get(User, user_id)
-            u.cash = round(cash, 4)
-            
-            # insert or update hodl
-            if new:
-                du.add(
+                a = db.get(Asset, asset_id)
+                a.price = price           
+
+            h = db.get(Hodl, (asset_id,user_id))
+            if h is None:
+                db.add(
                     Hodl(asset_id=asset_id, user_id=user_id, qty=qty)
                 )
-                # get new obj to append to user collection
-                h = du.execute(select(Hodl).where(
-                    Hodl.asset_id == asset_id, Hodl.user_id == user_id
-                )).scalar()
-                u.holdings.append(h)
             else:
-                h = du.get(Hodl, (asset_id, user_id))
                 h.qty = qty
 
-            # insert trade
-            du.add(
+            u = db.get(User, user_id)
+            u.cash = cash
+
+            db.add(
                 Trade(type=type, user_id=user_id, asset_id=asset_id, qty=shares, price=price)
             )
-            du.commit()
-        flash("done")     
+            db.commit()
+        
+        flash("done")
         
         # Tally achievements
         if 1 not in badges:     # s1: make a trade
@@ -199,33 +169,46 @@ def trade():
     return render_template("trade.html")
 
 
-@bp.route("/quote", methods=["GET", "POST"])
+@bp.route("/quote", methods=["POST"])
 @login_required
 def quote():
     
-    # POST
     if request.method == "POST":
-
-    
-        # lookup
+        user_id = g.user["id"]
+        
+        # Lookup
         symbol = request.form.get("symbol").upper()
-        with Session() as cur:
-            row = cur.execute(select(Asset).where(
-                Asset.symbol == symbol
-            )).scalar()
-            if row is not None:
-                price = round(row.price, 2)
-                flash(f"{symbol}: ${price}")
-            else:
-                flash("None")
+        quote = lookup(symbol)
+        if quote is not None:
+            name = quote["name"]
+            price = quote["price"]
         
-        # def look_up():
-            # pass
-        
-        return render_template("quote.html")
+            # Update db
+            with Session() as db:
+                a = db.execute(select(Asset).where(
+                    Asset.symbol == symbol
+                )).scalar()
+                if a is None:
+                    db.add(
+                        Asset(symbol=symbol, name=name, price=price)
+                    )
+                    a = db.execute(select(Asset).where(Asset.symbol == symbol)).scalar()
+                else:
+                    a.price = price
+                
+                # Add to watching if not present
+                h = db.get(Hodl, (a.id, user_id))
+                if h is None:
+                    db.add(
+                        Hodl(asset_id=a.id, user_id=user_id, qty=0)
+                    )
+                db.commit()
+            
+            flash("Found: {} ${}".format(symbol, usd(price)))
+            return redirect("/")
 
-    # GET
-    return render_template("quote.html")
+        flash("None")
+        return redirect("/")
 
 
 @bp.route("/watch", methods=["POST"])
@@ -236,11 +219,11 @@ def watch():
     asset_id = request.form.get("asset")
     symbol = request.form.get("symbol")
 
-    with Session() as cur:
-        cur.add(
+    with Session() as db:
+        db.add(
             Hodl(asset_id=asset_id, user_id=g.user["id"], qty=0)
         )
-        cur.commit()
+        db.commit()
     
     flash(f"added {symbol}")
     return redirect(url_for("main.quote"))
@@ -253,10 +236,10 @@ def unwatch():
     
     user_id = g.user["id"]
     asset_id = request.form.get("asset")
-    with Session() as cur:
-        h = cur.get(Hodl, (asset_id,user_id))
-        cur.delete(h)
-        cur.commit()
+    with Session() as db:
+        h = db.get(Hodl, (asset_id,user_id))
+        db.delete(h)
+        db.commit()
     return redirect("/")
 
 
@@ -266,33 +249,22 @@ def search():
     """Handle a request for database records"""
     # search assets for exact symbol or name like
     # return 1 row w symbol, name
-    # if watching, say so, else render button to watch
-
-    user_id = g.user["id"]
-    list =[]
+        
     s = request.args.get("q").upper()
-    with Session() as cur:
-        
-        # get holdings including watch only
-        sel = select(Hodl.asset_id).where(Hodl.user_id == user_id)
-        for asset in cur.scalars(sel):
-            list.append(asset)
-        
-        # fetch asset row
-        if s is not None:
-            row = cur.execute(text(
+    if s is None or s == '':
+        row = None
+    else:
+        with Session() as db:
+            row = db.execute(text(
                 '''
                 SELECT * FROM asset 
                 WHERE symbol =:sym OR name LIKE :nam
-                '''),   {
-                        "sym": s,
-                        "nam": '%' + s + '%'
-                    }
-            ).first()
-        else:
-            row = None
-
-    return render_template("search.html", row=row, watching=list)
+                '''), {
+                    "sym": s,
+                    "nam": '%' + s + '%'
+                }).first()
+    
+    return render_template("search.html", row=row)
 
 
 @bp.route("/settings", methods=["GET", "POST"])
@@ -305,11 +277,11 @@ def settings():
         if theme is not None:
             
             # Set theme
-            with Session() as cur:
-                cur.execute(text('UPDATE settings SET theme =:s WHERE user_id =:i'),
+            with Session() as db:
+                db.execute(text('UPDATE settings SET theme =:s WHERE user_id =:i'),
                     {"s": theme, "i": g.user["id"]}
                 )
-                cur.commit()
+                db.commit()
            
             if theme == 'dark':
                 session["theme"] = 'dark' 
@@ -324,41 +296,40 @@ def settings():
         # reset one - tables: trade, holding, badge, user
         elif request.form.get("reset") == "me":
             user_id = g.user["id"]
-            with Session() as cur:
-                cur.execute(text('delete from trade where user_id =:i'), {"i": user_id})
-                cur.execute(text('delete from holding where user_id =:i'), {"i": user_id})
-                cur.execute(text('delete from badge where user_id =:i'), {"i": user_id})
-                u = cur.get(User, user_id)
+            with Session() as db:
+                db.execute(text('delete from trade where user_id =:i'), {"i": user_id})
+                db.execute(text('delete from holding where user_id =:i'), {"i": user_id})
+                db.execute(text('delete from badge where user_id =:i'), {"i": user_id})
+                u = db.get(User, user_id)
                 u.cash = default_cash
-                cur.commit()
+                db.commit()
         
         # reset all
         elif request.form.get("reset") == "all":
-            with Session() as cur:
-                cur.execute(text('delete from trade'))
-                cur.execute(text('delete from holding'))
-                cur.execute(text('delete from badge'))
-                cur.execute(text('update user set cash = :i'), {"i": default_cash})
-                cur.commit()
+            with Session() as db:
+                db.execute(text('delete from trade'))
+                db.execute(text('delete from holding'))
+                db.execute(text('delete from badge'))
+                db.execute(text('update user set cash = :i'), {"i": default_cash})
+                db.commit()
             
         return redirect(url_for("index"))
 
     # GET
     user_id = g.user["id"]
     badges = get_badges()
-    with Session() as cur:
-        unlockables = cur.execute(select(Skull)).scalars().all()
+    with Session() as db:
+        unlockables = db.execute(select(Skull)).scalars().all()
     
-    # pass user badges and list of unlockables
     return render_template("settings.html", badges=badges, unlockables=unlockables)
 
 
 def get_badges():
-    """Return a list of achievement id, given user_id"""
+    """Return a list of achievement id, given user id"""
 
     badges = []
-    with Session() as cur:
-        u = cur.get(User, g.user["id"])
+    with Session() as db:
+        u = db.get(User, g.user["id"])
         for skull in u.badges:
             badges.append(skull.id)
     return badges
@@ -366,73 +337,53 @@ def get_badges():
 
 def add_badges(events):
     """Add earned achievements to user badge collection"""
-    # return a list of achievement names to display to user
-    
+    # return a list of achievement names to display to user    
     # For each skull id passed in by events, we get a skull object from the ORM
     # and append it to the user collection. On commit, an automatic INSERT to the 
     # badge table is emitted with the combined (skull,user) foreign keys
     names = []
-    with Session() as cur:
-        u = cur.get(User, g.user["id"])
+    with Session() as db:
+        u = db.get(User, g.user["id"])
         for skull_id in events:
-            skull = cur.get(Skull, skull_id)
+            skull = db.get(Skull, skull_id)
             u.badges.append(skull)
             names.append(skull.name)
-        cur.commit()
+        db.commit()
         
     return names
 
 
-def is_profit(asset_id, price, qty):
+def is_profit(asset_id, value, qty):
     """Return True if proceeds from sale exceeds cash outlay"""
-    
-    # long side only
-    # is holding this symbol? assume yes since we're currently selling
-    # qty arg is qty owned before sale
-    # profit is True if this trade price > (net historical basis)        
+    # param: asset, 
+    # param: this sale value, 
+    # param: prev qty owned    
+
+    # profit is True if this trade val > outlay of current holdings
     
     # Query all trades of this symbol
-    with Session() as cur:
-        tb = cur.execute(select(Trade).where(
-            Trade.user_id == g.user["id"],
-            Trade.asset_id == asset_id        
-        )).scalars().all()
+    with Session() as db:
+        sel = text(
+            '''
+            SELECT * from trade
+            WHERE trade.asset_id = :a
+            AND trade.user_id = :i
+            ORDER BY time DESC
+            '''
+        ).bindparams(a=asset_id, i=g.user["id"])
 
-        # Avg basis = (total outlay - total proceeds) / current qty
-        sum = 0
-        for row in tb:
+        # Crunch value spent
+        owned = 0
+        spent = 0
+        for row in db.execute(sel).all():
+            val = row.price * row.qty
             if row.type == 'buy':
-                sum += (row.price * row.qty)
+                owned += row.qty
+                spent += val
             else:
-                sum -= (row.price * row.qty)
-        basis = sum / qty
+                owned -= row.qty
+                spent -= val
+            if owned == qty:
+                break
 
-    return (price > basis)
-
-
-def lookup(symbol):
-    """Look up quote for symbol."""
-
-    return None
-    # Contact API
-    # try:
-        # api_key = os.environ.get("API_KEY")
-        # url = f"https://some-foo.bar/stock/{urllib.parse.quote_plus(symbol)}/quote?token={api_key}"
-        # response = requests.get(url)
-        # response.raise_for_status()
-    # except requests.RequestException:
-    #     return None
-    # Parse response
-    # try:
-    #     quote = response.json()
-    #     return {
-    #         "name": quote["companyName"],
-    #         "price": float(quote["latestPrice"]),
-    #         "symbol": quote["symbol"]
-    #     }
-    # except (KeyError, TypeError, ValueError):
-    #     return None
-
-def usd(value):
-    """Format value as USD."""
-    return f"{value:,.2f}"    
+    return (value > spent)

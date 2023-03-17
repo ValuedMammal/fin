@@ -5,11 +5,10 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy import select, text
 
-from finance.db import Session
+from finance.db import get_db, Session
 from finance.model import User
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
-
 
 
 @bp.after_app_request
@@ -33,8 +32,11 @@ def load_logged_in_user():
             "id": user_id,
             "name": name
             }
-        return     
-
+    Session.configure(bind=
+        get_db(path=current_app.config["DATABASE"])
+    )
+    return
+    
 
 @bp.route("/register", methods=["GET", "POST"])
 def register():
@@ -68,8 +70,9 @@ def register():
 
         if error is not None:
             flash(error)
-            return render_template("auth/login.html", view=view)
+            return redirect(url_for("auth.login"), view=view)
         
+        # Success
         return redirect(url_for("auth.login"))
 
     # GET
@@ -99,7 +102,7 @@ def login():
 
         if error is not None:
             flash(error)
-            return render_template("auth/login.html", view=view)
+            return redirect(url_for("auth.login"), view=view)
         
         session.clear()
         session["user_id"] = row.id

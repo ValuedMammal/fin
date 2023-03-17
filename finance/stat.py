@@ -88,3 +88,9 @@ def leaders():
                         break
     
     return render_template("/stat/leaders.html", list=list)
+
+
+@bp.route("/publish", methods=["POST"])
+def publish():
+    flash("not implemented")
+    return redirect(url_for("stat.leaders"))
